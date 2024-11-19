@@ -15,4 +15,4 @@ ignore_this.txt
 gui/
 *.log
 .env
-venv/
+venv
