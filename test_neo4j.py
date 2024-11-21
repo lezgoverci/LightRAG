@@ -22,25 +22,29 @@ rag = LightRAG(
     # llm_model_func=gpt_4o_complete  # Optionally, use a stronger model
 )
 
-with open("./book.txt") as f:
+with open("./xponent.txt") as f:
     rag.insert(f.read())
 
-# Perform naive search
-print(
-    rag.query("What are the top themes in this story?", param=QueryParam(mode="naive"))
-)
+# # Perform naive search
+# print(
+#     rag.query("What are the top themes in this story?", param=QueryParam(mode="naive"))
+# )
 
-# Perform local search
-print(
-    rag.query("What are the top themes in this story?", param=QueryParam(mode="local"))
-)
+# # Perform local search
+# print(
+#     rag.query("What are the top themes in this story?", param=QueryParam(mode="local"))
+# )
 
-# Perform global search
-print(
-    rag.query("What are the top themes in this story?", param=QueryParam(mode="global"))
-)
 
-# Perform hybrid search
-print(
-    rag.query("What are the top themes in this story?", param=QueryParam(mode="hybrid"))
-)
+while True:
+    query = input("what is your query? ")
+
+    # Perform global search
+    print(
+        rag.query(query, param=QueryParam(mode="global"))
+    )
+
+# # Perform hybrid search
+# print(
+#     rag.query("What are the top themes in this story?", param=QueryParam(mode="hybrid"))
+# )

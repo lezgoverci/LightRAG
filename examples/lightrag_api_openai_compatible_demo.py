@@ -71,6 +71,7 @@ rag = LightRAG(
         max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
         func=embedding_func,
     ),
+    graph_storage="Neo4JStorage",
 )
 
 
