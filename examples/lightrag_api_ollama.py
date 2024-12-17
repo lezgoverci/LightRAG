@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import os
 from lightrag import LightRAG, QueryParam
 from lightrag.llm import openai_complete_if_cache, openai_embedding
+from lightrag.llm import ollama_model_complete, ollama_embedding
 from lightrag.utils import EmbeddingFunc
 import numpy as np
 from typing import Optional
@@ -18,12 +19,12 @@ app = FastAPI(title="LightRAG API", description="API for RAG operations")
 # Configure working directory
 WORKING_DIR = os.environ.get("RAG_DIR", f"{DEFAULT_RAG_DIR}")
 print(f"WORKING_DIR: {WORKING_DIR}")
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
-print(f"LLM_MODEL: {LLM_MODEL}")
+# LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+# print(f"LLM_MODEL: {LLM_MODEL}")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large")
-print(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
-EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
-print(f"EMBEDDING_MAX_TOKEN_SIZE: {EMBEDDING_MAX_TOKEN_SIZE}")
+# print(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+# EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
+# print(f"EMBEDDING_MAX_TOKEN_SIZE: {EMBEDDING_MAX_TOKEN_SIZE}")
 
 if not os.path.exists(WORKING_DIR):
     os.mkdir(WORKING_DIR)
@@ -32,49 +33,62 @@ if not os.path.exists(WORKING_DIR):
 # LLM model function
 
 
-async def llm_model_func(
-    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
-) -> str:
-    return await openai_complete_if_cache(
-        LLM_MODEL,
-        prompt,
-        system_prompt=system_prompt,
-        history_messages=history_messages,
-        base_url="https://api.groq.com/openai/v1",
-        api_key="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",
-        **kwargs,
-    )
+# async def llm_model_func(
+#     prompt, system_prompt=None, history_messages=[], **kwargs
+# ) -> str:
+#     return await openai_complete_if_cache(
+#         LLM_MODEL,
+#         prompt,
+#         system_prompt=system_prompt,
+#         history_messages=history_messages,
+#         **kwargs,
+#     )
 
 
 # Embedding function
 
 
 async def embedding_func(texts: list[str]) -> np.ndarray:
-    return await openai_embedding(
+    return await ollama_embedding(
         texts,
-        model=EMBEDDING_MODEL,
-        base_url="http://localhost:11434/v1"
+        embed_model=EMBEDDING_MODEL,
     )
 
 
-# async def get_embedding_dim():
-#     test_text = ["This is a test sentence."]
-#     embedding = await embedding_func(test_text)
-#     embedding_dim = embedding.shape[1]
-#     print(f"{embedding_dim=}")
-#     return embedding_dim
+async def get_embedding_dim():
+    test_text = ["This is a test sentence."]
+    embedding = await embedding_func(test_text)
+    embedding_dim = embedding.shape[1]
+    print(f"{embedding_dim=}")
+    return embedding_dim
 
 
 # Initialize RAG instance
+# rag = LightRAG(
+#     working_dir=WORKING_DIR,
+#     llm_model_func=llm_model_func,
+#     embedding_func=EmbeddingFunc(
+#         embedding_dim=asyncio.run(get_embedding_dim()),
+#         max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
+#         func=embedding_func,
+#     ),
+#     graph_storage="Neo4JStorage",
+# )
+
 rag = LightRAG(
     working_dir=WORKING_DIR,
-    llm_model_func=llm_model_func,
+    llm_model_func=ollama_model_complete,
+    llm_model_name="llama3.2:3b",
+    llm_model_max_async=4,
+    llm_model_max_token_size=32768,
+    llm_model_kwargs={"host": "http://localhost:11434", "options": {"num_ctx": 32768}},
     embedding_func=EmbeddingFunc(
         embedding_dim=3072,
-        max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
-        func=embedding_func,
+        max_token_size=8192,
+        func=lambda texts: ollama_embedding(
+            texts, embed_model="nomic-embed-text", host="http://localhost:11434"
+        ),
     ),
-    graph_storage="Neo4JStorage",
 )
 
 
